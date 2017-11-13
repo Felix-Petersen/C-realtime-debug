@@ -30,7 +30,6 @@ header_comment = "/*\n" \
 debug_str1 = "/*DEBUG by CRealtimeDebug.py*/"
 debug_str2 = "/*DEBUG by CRealtimeDebug.py | Please do NOT write anything into this line*/"
 
-# TODO: ensure that for/while/if etc. is not part of var name etc.
 
 def get_count_init_line():
     global counter_variable_name_counter
@@ -41,15 +40,22 @@ def get_count_line():
 def get_debug_line(parantheses_content, type):
     output = debug_str1
     output += 'std::cout << "[' + args.input_file_dir + '][" << __FUNCTION__ << "][Line " << __LINE__ << "] Loop Type: ' + type
-    output += ', condition: (' + parantheses_content + '), count: " << cRealtimeDebugInt' + str(counter_variable_name_counter) + ';  '
+    output += ', condition: (' + parantheses_content + '), count: " << cRealtimeDebugInt' + str(counter_variable_name_counter) + ' << "\\n";  '
     output += debug_str2
     return output
 def get_debug_line_without_count(parantheses_content, type):
     output = debug_str1
     output += 'std::cout << "[' + args.input_file_dir + '][" << __FUNCTION__ << "][Line " << __LINE__ << "] Cond Type: ' + type
-    output += ', condition: (' + parantheses_content + '), value: " << (' + parantheses_content + ');  '
+    output += ', condition: (' + parantheses_content + '), value: " << (' + parantheses_content + ') << "\\n";  '
     output += debug_str2
     return output
+
+def matches_incl_whitespace(text, pattern):
+    has_to_be_in = ' \n\t;(){}'
+    if pattern == text[1:-1]:
+        return ((text[0] in has_to_be_in) and (text[-1] in has_to_be_in))
+    else:
+        return False
 
 def run_state_machine_add(content):
     pos = -1
@@ -178,12 +184,12 @@ def run_state_machine_add(content):
                     with_braces_found = False
                 continue
 
-            elif content[pos-1:pos+1] == 'if' and content[pos-6:pos+1] != 'else if' and not content[pos-2].isalpha() and not content[pos+1].isalpha():
+            elif matches_incl_whitespace(content[pos-2:pos+2], 'if') and content[pos-6:pos+1] != 'else if':
                 search_parantheses = 0
                 in_type = 'if'
                 if_start = pos
                 # Attention! in this case two instead of one newline has to be removed!
-            elif content[pos-2:pos+1] == 'for' and not content[pos-3].isalpha() and not content[pos-3] == "_" and not content[pos+1].isalpha():
+            elif matches_incl_whitespace(content[pos-3:pos+2], 'for'):
                 search_parantheses = 0
                 in_type = 'for'
                 # Attention! in this case two instead of one newline has to be removed!
@@ -192,7 +198,7 @@ def run_state_machine_add(content):
                 pos += len(insert)
                 line_add_count += 1
                 line += 2
-            elif content[pos-4:pos+1] == 'while' and not content[pos-5].isalpha() and not content[pos+1].isalpha():
+            elif matches_incl_whitespace(content[pos-5:pos+2], 'while'):
                 search_parantheses = 0
                 in_type = 'while'
                 # Attention! in this case two instead of one newline has to be removed!
@@ -201,7 +207,7 @@ def run_state_machine_add(content):
                 pos += len(insert)
                 line_add_count += 1
                 line += 2
-            elif content[pos-1:pos+1] == 'do' and not content[pos-2].isalpha() and not content[pos+1].isalpha():
+            elif matches_incl_whitespace(content[pos-2:pos+2], 'do'):
                 search_braces = 0
                 in_type = 'do'
                 # Attention! in this case two instead of one newline has to be removed!
